@@ -1,13 +1,17 @@
 
 -- user-defined function named calculateTotalDuration that calculates the total duration of movies watched by a customer.
-CREATE OR REPLACE FUNCTION calculateTotalDuration(customer_id varchar(10))
-RETURNS INTERVAL
+CREATE OR REPLACE FUNCTION TotalDuration(customer_id_param varchar(10))
+RETURNS TABLE (
+    customer_id varchar(10),
+    name varchar(100),
+    total_duration INTERVAL
+)
 AS $$
-DECLARE
-    total_duration INTERVAL;
 BEGIN
     SELECT
-        SUM(m.Duration::interval) INTO total_duration
+        c.Customer_ID,
+        c.Name,
+        SUM(m.Duration::interval) AS total_duration
     FROM
         Customer c
     INNER JOIN
@@ -15,16 +19,23 @@ BEGIN
     INNER JOIN
         Movie m ON b.Movie_ID = m.Movie_ID
     WHERE
-        c.Customer_ID = calculateTotalDuration.customer_id;
+        c.Customer_ID = customer_id_param
+    GROUP BY
+        c.Customer_ID,
+        c.Name
+    INTO
+        customer_id,
+        name,
+        total_duration;
 
-    RETURN total_duration;
+    RETURN NEXT;
 END;
 $$LANGUAGE'plpgsql';
 
-SELECT calculateTotalDuration('CU001');
-SELECT calculateTotalDuration('CU002');
-SELECT calculateTotalDuration('CU005');
 
+SELECT * FROM TotalDuration('CU001');
+SELECT * FROM TotalDuration('CU003');
+SELECT * FROM TotalDuration('CU005');
 
 -- After executing the above code, you can use the calculateTotalDuration function to calculate the total duration of movies watched by a specific customer by providing their Customer_ID.
 -- This will return the total duration as an interval value, indicating the accumulated duration of movies watched by the customer
